@@ -1,0 +1,3 @@
+[server]
+# Allow uploading CSVs up to ~400MB
+maxUploadSize = 400

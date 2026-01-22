@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs and outputs
+*.log
+output.txt
+test_run.txt
+verification_output.txt
+verification_log.txt
+
+# OS
+.DS_Store
+Thumbs.db
