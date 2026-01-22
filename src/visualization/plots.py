@@ -1,3 +1,10 @@
+"""
+Visualization layer.
+
+Handles all plotting logic. Functions return figures, not display them.
+No Streamlit imports.
+"""
+
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -6,29 +13,65 @@ import numpy as np
 
 
 def plot_target_distribution(df, target_col):
-    """Plot target distribution."""
+    """
+    Plot target distribution.
+    
+    Args:
+        df: DataFrame
+        target_col: Target column name
+        
+    Returns:
+        plotly Figure
+    """
     target = df[target_col]
     n_unique = target.nunique()
     
     if n_unique <= 20:
         value_counts = target.value_counts().reset_index()
         value_counts.columns = [target_col, 'Count']
-        fig = px.bar(value_counts, x=target_col, y='Count', 
-                     title=f"Target Distribution: {target_col}",
-                     color=target_col)
+        fig = px.bar(
+            value_counts, x=target_col, y='Count', 
+            title=f"Target Distribution: {target_col}",
+            color=target_col
+        )
     else:
-        fig = px.histogram(df, x=target_col, nbins=30,
-                          title=f"Target Distribution: {target_col} (Continuous)",
-                          color_discrete_sequence=['#3498db'])
-        fig.add_vline(x=target.mean(), line_dash="dash", line_color="red",
-                     annotation_text=f"Mean: {target.mean():.2f}")
+        # Check if target is numeric before computing mean
+        if pd.api.types.is_numeric_dtype(target):
+            fig = px.histogram(
+                df, x=target_col, nbins=30,
+                title=f"Target Distribution: {target_col} (Continuous)",
+                color_discrete_sequence=['#3498db']
+            )
+            fig.add_vline(
+                x=target.mean(), line_dash="dash", line_color="red",
+                annotation_text=f"Mean: {target.mean():.2f}"
+            )
+        else:
+            # Categorical with many values
+            value_counts = target.value_counts().head(20).reset_index()
+            value_counts.columns = [target_col, 'Count']
+            fig = px.bar(
+                value_counts, x=target_col, y='Count',
+                title=f"Target Distribution: {target_col} (Top 20)",
+                color=target_col
+            )
     
     fig.update_layout(showlegend=False)
     return fig
 
 
 def plot_numeric_distributions(df, target_col=None, max_features=6):
-    """Plot histograms of numeric features."""
+    """
+    Plot histograms of numeric features.
+    
+    Args:
+        df: DataFrame
+        target_col: Target column to exclude (optional)
+        max_features: Maximum features to plot
+        
+    Returns:
+        plotly Figure or None
+    """
     numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
     
     if target_col and target_col in numeric_cols:
@@ -56,9 +99,18 @@ def plot_numeric_distributions(df, target_col=None, max_features=6):
 
 
 def plot_feature_vs_target(df, target_col, max_features=4):
-    """Plot numeric features against the target."""
-    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+    """
+    Plot numeric features against the target.
     
+    Args:
+        df: DataFrame
+        target_col: Target column name
+        max_features: Maximum features to plot
+        
+    Returns:
+        plotly Figure or None
+    """
+    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
     feature_cols = [c for c in numeric_cols if c != target_col]
     
     if not feature_cols:
@@ -79,8 +131,10 @@ def plot_feature_vs_target(df, target_col, max_features=4):
         
         if target_is_numeric and target_unique > 20:
             fig.add_trace(
-                go.Scatter(x=df[col], y=df[target_col], mode='markers', 
-                          marker=dict(opacity=0.5, size=5), name=col, showlegend=False),
+                go.Scatter(
+                    x=df[col], y=df[target_col], mode='markers', 
+                    marker=dict(opacity=0.5, size=5), name=col, showlegend=False
+                ),
                 row=row, col=col_idx
             )
         else:
@@ -96,37 +150,91 @@ def plot_feature_vs_target(df, target_col, max_features=4):
 
 
 def plot_missing_heatmap(df):
+    """
+    Plot heatmap of missing values.
+    
+    Args:
+        df: DataFrame
+        
+    Returns:
+        plotly Figure or None
+    """
     missing_matrix = df.isnull()
     if missing_matrix.sum().sum() == 0:
         return None
         
-    fig = px.imshow(missing_matrix, 
-                    labels=dict(x="Features", y="Rows", color="Missing"),
-                    color_continuous_scale=['#eee', '#e74c3c'],
-                    title="Missing Value Heatmap")
+    fig = px.imshow(
+        missing_matrix, 
+        labels=dict(x="Features", y="Rows", color="Missing"),
+        color_continuous_scale=['#eee', '#e74c3c'],
+        title="Missing Value Heatmap"
+    )
     return fig
+
 
 def plot_distributions(df_before, df_after, column):
+    """
+    Plot distribution comparison before and after processing.
+    
+    Args:
+        df_before: Original DataFrame
+        df_after: Processed DataFrame
+        column: Column to compare
+        
+    Returns:
+        plotly Figure
+    """
     fig = go.Figure()
-    fig.add_trace(go.Histogram(x=df_before[column], name='Original', opacity=0.5, marker_color='blue'))
-    fig.add_trace(go.Histogram(x=df_after[column], name='Processed', opacity=0.5, marker_color='orange'))
-    fig.update_layout(barmode='overlay', title=f"Distribution Shift: {column}", xaxis_title=column, yaxis_title="Count")
+    fig.add_trace(go.Histogram(
+        x=df_before[column], name='Original', opacity=0.5, marker_color='blue'
+    ))
+    fig.add_trace(go.Histogram(
+        x=df_after[column], name='Processed', opacity=0.5, marker_color='orange'
+    ))
+    fig.update_layout(
+        barmode='overlay', 
+        title=f"Distribution Shift: {column}", 
+        xaxis_title=column, 
+        yaxis_title="Count"
+    )
     return fig
 
+
 def plot_correlation_heatmap(df):
+    """
+    Plot correlation heatmap for numeric features.
+    
+    Args:
+        df: DataFrame
+        
+    Returns:
+        plotly Figure or None
+    """
     numeric_df = df.select_dtypes(include=[np.number])
     if numeric_df.empty:
         return None
         
     corr = numeric_df.corr()
-    fig = px.imshow(corr, text_auto=True, color_continuous_scale='RdBu_r', title="Feature Correlation Matrix")
+    fig = px.imshow(
+        corr, text_auto=True, 
+        color_continuous_scale='RdBu_r', 
+        title="Feature Correlation Matrix"
+    )
     return fig
 
 
-# Decision-oriented plots for feature selection
-
 def plot_feature_target_separation(df, target_col, max_features=6):
-    """Boxplots showing feature separation by target class."""
+    """
+    Plot boxplots showing feature separation by target class.
+    
+    Args:
+        df: DataFrame
+        target_col: Target column name
+        max_features: Maximum features to plot
+        
+    Returns:
+        plotly Figure or None
+    """
     numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
     feature_cols = [c for c in numeric_cols if c != target_col]
     
@@ -154,8 +262,10 @@ def plot_feature_target_separation(df, target_col, max_features=6):
         for j, target_val in enumerate(sorted(target.unique())[:5]):
             mask = target == target_val
             fig.add_trace(
-                go.Box(y=df.loc[mask, col], name=str(target_val), 
-                       marker_color=colors[j % len(colors)], showlegend=(i == 0)),
+                go.Box(
+                    y=df.loc[mask, col], name=str(target_val), 
+                    marker_color=colors[j % len(colors)], showlegend=(i == 0)
+                ),
                 row=row, col=col_idx
             )
     
@@ -168,7 +278,16 @@ def plot_feature_target_separation(df, target_col, max_features=6):
 
 
 def plot_correlation_to_target(df, target_col):
-    """Sorted bar plot of absolute correlation with target."""
+    """
+    Plot sorted bar chart of absolute correlation with target.
+    
+    Args:
+        df: DataFrame
+        target_col: Target column name
+        
+    Returns:
+        tuple: (plotly Figure, list of top features) or (None, [])
+    """
     numeric_df = df.select_dtypes(include=[np.number])
     
     if target_col not in numeric_df.columns:
@@ -179,7 +298,7 @@ def plot_correlation_to_target(df, target_col):
     feature_cols = [c for c in numeric_df.columns if c != target_col]
     
     if not feature_cols:
-        return None
+        return None, []
     
     correlations = []
     for col in feature_cols:
@@ -191,12 +310,15 @@ def plot_correlation_to_target(df, target_col):
             pass
     
     if not correlations:
-        return None
+        return None, []
     
     corr_df = pd.DataFrame(correlations).sort_values('Correlation', ascending=False)
     
     max_corr = corr_df['Correlation'].max() if corr_df['Correlation'].max() > 0 else 1
-    colors = [f'rgba(52, 152, 219, {0.3 + 0.7 * (c / max_corr)})' for c in corr_df['Correlation']]
+    colors = [
+        f'rgba(52, 152, 219, {0.3 + 0.7 * (c / max_corr)})' 
+        for c in corr_df['Correlation']
+    ]
     colors[:3] = ['#2980b9', '#3498db', '#5dade2'][:len(colors[:3])]
     
     fig = go.Figure(go.Bar(
@@ -222,7 +344,16 @@ def plot_correlation_to_target(df, target_col):
 
 
 def plot_feature_scale_comparison(df, target_col=None):
-    """Bar chart showing scale differences across features."""
+    """
+    Plot bar chart showing scale differences across features.
+    
+    Args:
+        df: DataFrame
+        target_col: Target column to exclude (optional)
+        
+    Returns:
+        tuple: (plotly Figure, list of dominant features) or (None, [])
+    """
     numeric_df = df.select_dtypes(include=[np.number])
     
     if target_col and target_col in numeric_df.columns:
@@ -272,7 +403,17 @@ def plot_feature_scale_comparison(df, target_col=None):
 
 
 def get_multicollinearity_pairs(df, target_col=None, threshold=0.8):
-    """Return highly correlated feature pairs."""
+    """
+    Find highly correlated feature pairs.
+    
+    Args:
+        df: DataFrame
+        target_col: Target column to exclude (optional)
+        threshold: Correlation threshold
+        
+    Returns:
+        list: List of dicts with 'pair' and 'corr' keys
+    """
     numeric_df = df.select_dtypes(include=[np.number])
     
     if target_col and target_col in numeric_df.columns:
@@ -298,7 +439,17 @@ def get_multicollinearity_pairs(df, target_col=None, threshold=0.8):
 
 
 def generate_model_guidance(model_name, dominant_features, high_corr_pairs):
-    """Generate actionable guidance."""
+    """
+    Generate actionable model guidance.
+    
+    Args:
+        model_name: Name of the model
+        dominant_features: List of features with large scales
+        high_corr_pairs: List of highly correlated pairs
+        
+    Returns:
+        str: Guidance text
+    """
     guidance_parts = []
     
     if model_name in ['Logistic Regression', 'KNN', 'SVM']:
@@ -306,7 +457,9 @@ def generate_model_guidance(model_name, dominant_features, high_corr_pairs):
             guidance_parts.append(f"Scale {', '.join(dominant_features[:2])}")
         if high_corr_pairs and model_name == 'Logistic Regression':
             pair = high_corr_pairs[0]
-            guidance_parts.append(f"Consider dropping one of {pair['pair']} (r={pair['corr']:.2f})")
+            guidance_parts.append(
+                f"Consider dropping one of {pair['pair']} (r={pair['corr']:.2f})"
+            )
     
     elif model_name == 'Decision Tree':
         guidance_parts.append("Scaling not required")
@@ -326,7 +479,18 @@ def plot_multicollinearity_warning(df, target_col=None, threshold=0.8):
 
 
 def plot_feature_importance_bar(feature_names, importances, model_name, top_n=5):
-    """Bar plot of top N feature importances."""
+    """
+    Plot bar chart of top N feature importances.
+    
+    Args:
+        feature_names: List of feature names
+        importances: Array of importance values
+        model_name: Model name for title
+        top_n: Number of features to show
+        
+    Returns:
+        plotly Figure or None
+    """
     if not feature_names or importances is None or len(importances) == 0:
         return None
     
@@ -334,8 +498,6 @@ def plot_feature_importance_bar(feature_names, importances, model_name, top_n=5)
         'Feature': feature_names[:len(importances)],
         'Importance': importances
     }).sort_values('Importance', ascending=True).tail(top_n)
-    
-    colors = px.colors.sequential.Viridis
     
     fig = go.Figure(go.Bar(
         x=importance_df['Importance'],
@@ -357,18 +519,48 @@ def plot_feature_importance_bar(feature_names, importances, model_name, top_n=5)
 
 
 def plot_performance_comparison(results):
+    """
+    Plot performance comparison across experiments.
+    
+    Args:
+        results: List of result dicts
+        
+    Returns:
+        plotly Figure or None
+    """
     df_res = pd.DataFrame(results)
     if df_res.empty:
         return None
         
-    df_melt = df_res.melt(id_vars=['Model', 'Experiment'], value_vars=['Accuracy', 'F1 Score'], 
-                          var_name='Metric', value_name='Score')
+    df_melt = df_res.melt(
+        id_vars=['Model', 'Experiment'], 
+        value_vars=['Accuracy', 'F1 Score'], 
+        var_name='Metric', 
+        value_name='Score'
+    )
     
-    fig = px.bar(df_melt, x='Experiment', y='Score', color='Metric', barmode='group',
-                 facet_col='Model', title="Performance Comparison")
+    fig = px.bar(
+        df_melt, x='Experiment', y='Score', color='Metric', barmode='group',
+        facet_col='Model', title="Performance Comparison"
+    )
     return fig
 
+
 def plot_feature_space(df, target_col, feature_x, feature_y):
-    fig = px.scatter(df, x=feature_x, y=feature_y, color=target_col, 
-                     title=f"Feature Space: {feature_x} vs {feature_y}")
+    """
+    Plot 2D feature space scatter plot.
+    
+    Args:
+        df: DataFrame
+        target_col: Target column for coloring
+        feature_x: X-axis feature
+        feature_y: Y-axis feature
+        
+    Returns:
+        plotly Figure
+    """
+    fig = px.scatter(
+        df, x=feature_x, y=feature_y, color=target_col, 
+        title=f"Feature Space: {feature_x} vs {feature_y}"
+    )
     return fig

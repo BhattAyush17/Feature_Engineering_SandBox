@@ -1,3 +1,10 @@
+"""
+Model logic layer.
+
+Handles model initialization, training, prediction, and evaluation.
+No Streamlit imports.
+"""
+
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
@@ -6,12 +13,21 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, f1_score
 from sklearn.utils.multiclass import type_of_target
 import pandas as pd
-from preprocessing import impute_data, encode_data, scale_data
-from data import get_column_types
+
+from src.preprocessing.preprocessing import impute_data, encode_data, scale_data
+from src.data.data import get_column_types
 
 
 def detect_target_type(y):
-    """Detect if target is classification or regression."""
+    """
+    Detect if target is classification or regression.
+    
+    Args:
+        y: Target series or array
+        
+    Returns:
+        dict: Target type information
+    """
     try:
         y_series = pd.Series(y)
     except Exception:
@@ -43,7 +59,7 @@ def detect_target_type(y):
         compatible_models = ['Logistic Regression', 'KNN', 'SVM', 'Decision Tree']
     elif target_type in regression_types:
         task_type = 'regression'
-        compatible_models = []  # No regression models available yet
+        compatible_models = []
     else:
         task_type = 'unknown'
         compatible_models = []
@@ -58,7 +74,16 @@ def detect_target_type(y):
 
 
 def check_training_compatibility(target_info, model_name):
-    """Check if model is compatible with target."""
+    """
+    Check if model is compatible with target.
+    
+    Args:
+        target_info: Dict from detect_target_type
+        model_name: Name of model to check
+        
+    Returns:
+        tuple: (is_compatible, warning_message)
+    """
     if target_info['task_type'] == 'regression':
         return False, (
             f"Skipped: Target is continuous ({target_info['n_unique']} unique values). "
@@ -80,6 +105,15 @@ def check_training_compatibility(target_info, model_name):
 
 
 def get_model(model_name):
+    """
+    Get model instance by name.
+    
+    Args:
+        model_name: 'Logistic Regression', 'KNN', 'SVM', or 'Decision Tree'
+        
+    Returns:
+        sklearn model instance
+    """
     if model_name == 'Logistic Regression':
         return LogisticRegression(max_iter=1000)
     elif model_name == 'KNN':
@@ -90,8 +124,79 @@ def get_model(model_name):
         return DecisionTreeClassifier()
     return LogisticRegression()
 
+
+def build_model(model_name, **kwargs):
+    """
+    Build model with custom parameters.
+    
+    Args:
+        model_name: Model type name
+        **kwargs: Model-specific parameters
+        
+    Returns:
+        sklearn model instance
+    """
+    if model_name == 'Logistic Regression':
+        return LogisticRegression(max_iter=kwargs.get('max_iter', 1000), **kwargs)
+    elif model_name == 'KNN':
+        return KNeighborsClassifier(
+            n_neighbors=kwargs.get('n_neighbors', 5),
+            **{k: v for k, v in kwargs.items() if k != 'n_neighbors'}
+        )
+    elif model_name == 'SVM':
+        return SVC(**kwargs)
+    elif model_name == 'Decision Tree':
+        return DecisionTreeClassifier(**kwargs)
+    return LogisticRegression(max_iter=1000)
+
+
+def train_model(X, y, model):
+    """
+    Train a model on data.
+    
+    Args:
+        X: Feature matrix
+        y: Target vector
+        model: sklearn model instance
+        
+    Returns:
+        Trained model
+    """
+    model.fit(X, y)
+    return model
+
+
+def predict(model, X):
+    """
+    Make predictions with a trained model.
+    
+    Args:
+        model: Trained sklearn model
+        X: Feature matrix
+        
+    Returns:
+        array: Predictions
+    """
+    return model.predict(X)
+
+
 def train_and_evaluate(df, target_col, model_name, preprocessing_params, test_size=0.2):
-    """Train and evaluate a classification model."""
+    """
+    Train and evaluate a classification model.
+    
+    Args:
+        df: DataFrame with features and target
+        target_col: Target column name
+        model_name: Model to train
+        preprocessing_params: Dict with 'imputation', 'encoding', 'scaling' keys
+        test_size: Test split ratio
+        
+    Returns:
+        dict: Metrics and trained model info
+        
+    Raises:
+        ValueError: If target is invalid for classification
+    """
     df = df.dropna(subset=[target_col])
 
     X = df.drop(columns=[target_col])
@@ -107,24 +212,28 @@ def train_and_evaluate(df, target_col, model_name, preprocessing_params, test_si
     
     target_type = type_of_target(y)
     if target_type in ['continuous', 'continuous-multioutput']:
-        raise ValueError("Target is continuous. Run check_training_compatibility() first.")
+        raise ValueError(
+            "The selected target column contains continuous values. "
+            "Classification models require discrete class labels."
+        )
     
     if y.nunique() < 2:
-        raise ValueError("Target needs at least 2 classes.")
+        raise ValueError(
+            "Target column must have at least two unique classes. "
+            "Cannot train a model on constant or single-class data."
+        )
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=42
+    )
     
     numeric_cols, categorical_cols = get_column_types(X_train)
     
+    # 1. Imputation
     strat_imp = preprocessing_params.get('imputation', 'Drop Rows')
-    
     X_train, imputer = impute_data(X_train, strat_imp, numeric_cols)
-    # Align y_train in case rows were dropped
     y_train = y_train.loc[X_train.index]
-    
-    # Transform test
     X_test, _ = impute_data(X_test, strat_imp, numeric_cols, imputer=imputer)
-    # Align y_test
     y_test = y_test.loc[X_test.index]
     
     # 2. Encoding
@@ -132,12 +241,13 @@ def train_and_evaluate(df, target_col, model_name, preprocessing_params, test_si
     X_train, encoder = encode_data(X_train, strat_enc, categorical_cols)
     X_test, _ = encode_data(X_test, strat_enc, categorical_cols, encoder=encoder)
     
+    # 3. Scaling
     numeric_cols, _ = get_column_types(X_train)
     strat_scale = preprocessing_params.get('scaling', 'No Scaling')
-    
     X_train, scaler = scale_data(X_train, strat_scale, numeric_cols)
     X_test, _ = scale_data(X_test, strat_scale, numeric_cols, scaler=scaler)
     
+    # Train
     model = get_model(model_name)
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)

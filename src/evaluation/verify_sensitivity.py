@@ -1,11 +1,20 @@
+"""
+Sensitivity analysis verification.
+
+Tests how model predictions change when varying individual features.
+"""
+
 import pandas as pd
 import numpy as np
 import sys
-from data import generate_messy_data
-from model_logic import get_model, train_and_evaluate
-from model_verification import run_sensitivity_analysis, plot_sensitivity_chart
+
+from src.data.data import generate_messy_data
+from src.models.model_logic import get_model, train_and_evaluate
+from src.models.model_verification import run_sensitivity_analysis, plot_sensitivity_chart
+
 
 def verify_sensitivity():
+    """Run sensitivity analysis verification tests."""
     print("Generating data...", flush=True)
     df = generate_messy_data(n_rows=200)
     target_col = 'Purchased'
@@ -50,6 +59,7 @@ def verify_sensitivity():
         print(f"FAILED: Exception during sensitivity analysis: {e}", flush=True)
         import traceback
         traceback.print_exc()
+
 
 if __name__ == "__main__":
     verify_sensitivity()

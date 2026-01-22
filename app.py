@@ -1,3 +1,23 @@
+"""
+ML Feature Engineering Sandbox - Entry Point (UI Layer)
+
+This is the Streamlit application entry point.
+Acts as a controller between UI and core logic.
+
+MUST stay here:
+- Streamlit UI layout (st.title, st.sidebar, st.tabs, st.expander)
+- User input controls (sliders, selects, file upload)
+- High-level orchestration calls
+- Rendering plots and metrics
+
+MUST NOT be here:
+- Data cleaning logic
+- Feature engineering logic  
+- Model training internals
+- Evaluation math
+- File system logic
+"""
+
 import os
 
 # Prevent loky CPU detection crash
@@ -5,24 +25,54 @@ os.environ.setdefault('LOKY_MAX_CPU_COUNT', '1')
 
 import streamlit as st
 import pandas as pd
-from data import (load_data, generate_messy_data, get_column_types,
-                  load_data_with_metadata, get_schema_summary, 
-                  get_visualization_sample, get_training_sample,
-                  MAX_ROWS_VISUALIZATION, MAX_ROWS_TRAINING)
-from model_logic import train_and_evaluate, detect_target_type, check_training_compatibility
-from plots import (plot_target_distribution, plot_numeric_distributions, 
-                   plot_correlation_heatmap, plot_feature_vs_target, plot_missing_heatmap,
-                   plot_feature_target_separation, plot_correlation_to_target,
-                   plot_feature_scale_comparison, get_multicollinearity_pairs,
-                   plot_feature_importance_bar, generate_model_guidance)
-from feature_analysis import analyze_features, get_model_guidance, get_feature_impact_ranking
-from model_verification import (run_feature_ablation, plot_ablation_chart, 
-                                 run_sensitivity_analysis, plot_sensitivity_chart,
-                                 get_verification_summary,
-                                 run_multi_model_response, plot_multi_model_response)
+
+# Absolute imports from src package
+from src.data.data import (
+    load_data, 
+    generate_messy_data, 
+    get_column_types,
+    load_data_with_metadata, 
+    get_schema_summary, 
+    get_visualization_sample, 
+    get_training_sample,
+    MAX_ROWS_VISUALIZATION, 
+    MAX_ROWS_TRAINING
+)
+from src.models.model_logic import (
+    train_and_evaluate, 
+    detect_target_type, 
+    check_training_compatibility
+)
+from src.visualization.plots import (
+    plot_target_distribution, 
+    plot_numeric_distributions, 
+    plot_correlation_heatmap, 
+    plot_feature_vs_target, 
+    plot_missing_heatmap,
+    plot_feature_target_separation, 
+    plot_correlation_to_target,
+    plot_feature_scale_comparison, 
+    get_multicollinearity_pairs,
+    plot_feature_importance_bar, 
+    generate_model_guidance
+)
+from src.features.feature_analysis import (
+    analyze_features, 
+    get_model_guidance, 
+    get_feature_impact_ranking
+)
+from src.models.model_verification import (
+    run_feature_ablation, 
+    plot_ablation_chart, 
+    run_sensitivity_analysis, 
+    plot_sensitivity_chart,
+    get_verification_summary,
+    run_multi_model_response, 
+    plot_multi_model_response
+)
 
 st.set_page_config(
-    page_title="ML-Sandbox",
+    page_title="Feature_Engineering_SandBox",
     page_icon="🧪",
     layout="wide"
 )
@@ -94,13 +144,32 @@ st.markdown("""
     margin-top: 1.5rem;
     font-size: 1rem;
 }
+
+/* Bold main section headers */
+.stApp h2 {
+    font-weight: 800 !important;
+    font-size: 1.8rem !important;
+    color: #ffffff !important;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    padding-bottom: 0.5rem;
+    margin-top: 2rem !important;
+    margin-bottom: 1rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.stApp h3 {
+    font-weight: 700 !important;
+    font-size: 1.3rem !important;
+    color: #e0e0e0 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
 # Header HTML
 st.markdown("""
 <div class="main-header">
-<h1>Feature Engineering & Model Evaluation</h1>
+<h1>Feature_Engineering_SandBox</h1>
 <div class="feature-grid">
 <div class="feature-item"><strong>Features</strong> <span>- transform, encode, select</span></div>
 <div class="feature-item"><strong>Assumptions</strong> <span>- distributions, relationships</span></div>
@@ -308,7 +377,7 @@ if df_full is not None:
                     st.caption("Accuracy drop when each feature is removed. Larger drop means more important.")
                     
                     fig_ablation = plot_ablation_chart(ablation_data)
-                    st.plotly_chart(fig_ablation, width='stretch')
+                    st.plotly_chart(fig_ablation, use_container_width=True)
                     
                     # Verification summary
                     summary = get_verification_summary(ablation_data)
@@ -329,7 +398,7 @@ if df_full is not None:
                         
                         sensitivity_feature = st.selectbox(
                             "Select feature to analyze",
-                            options=numeric_features[:10],  # Limit options
+                            options=numeric_features[:10],
                             index=0
                         )
                         
@@ -343,7 +412,7 @@ if df_full is not None:
                         if sensitivity_data:
                             fig_sensitivity = plot_sensitivity_chart(sensitivity_data, target_col)
                             if fig_sensitivity:
-                                st.plotly_chart(fig_sensitivity, width='stretch')
+                                st.plotly_chart(fig_sensitivity, use_container_width=True)
                                 
                                 y_vals = sensitivity_data['predictions']
                                 y_range = max(y_vals) - min(y_vals)
@@ -392,7 +461,7 @@ if df_full is not None:
             
             fig_compare = plot_multi_model_response(response_data, target_col)
             if fig_compare:
-                st.plotly_chart(fig_compare, width='stretch')
+                st.plotly_chart(fig_compare, use_container_width=True)
         else:
             st.info("Could not run model comparison for this feature.")
     elif not can_train:
@@ -421,7 +490,7 @@ if df_full is not None:
     styled_df = feature_summary.style.map(
         style_recommendation, subset=['Recommendation']
     )
-    st.dataframe(styled_df, width='stretch', hide_index=True)
+    st.dataframe(styled_df, use_container_width=True, hide_index=True)
     
     with st.expander("Flag Legend"):
         st.markdown(
@@ -469,13 +538,13 @@ if df_full is not None:
     st.subheader("[A] Feature Importance")
     st.caption("Top = keep first, bottom = optional")
     if fig_corr:
-        st.plotly_chart(fig_corr, width='stretch')
+        st.plotly_chart(fig_corr, use_container_width=True)
     else:
         st.info("No numeric features for correlation analysis.")
     
     st.subheader("[B] Scaling Requirement")
     if fig_scale:
-        st.plotly_chart(fig_scale, width='stretch')
+        st.plotly_chart(fig_scale, use_container_width=True)
     else:
         st.info("No numeric features to compare scales.")
     
@@ -494,28 +563,28 @@ if df_full is not None:
         st.subheader("Target Distribution")
         fig_target = plot_target_distribution(df, target_col)
         if fig_target:
-            st.plotly_chart(fig_target, width='stretch')
+            st.plotly_chart(fig_target, use_container_width=True)
         
         st.subheader("Feature vs Target Separation")
         fig_separation = plot_feature_target_separation(df, target_col)
         if fig_separation:
-            st.plotly_chart(fig_separation, width='stretch')
+            st.plotly_chart(fig_separation, use_container_width=True)
         else:
             fig_vs_target = plot_feature_vs_target(df, target_col)
             if fig_vs_target:
-                st.plotly_chart(fig_vs_target, width='stretch')
+                st.plotly_chart(fig_vs_target, use_container_width=True)
         
         fig_missing = plot_missing_heatmap(df)
         if fig_missing:
             st.subheader("Missing Values")
-            st.plotly_chart(fig_missing, width='stretch')
+            st.plotly_chart(fig_missing, use_container_width=True)
         else:
             st.success("No missing values in this dataset.")
         
         st.subheader("Feature Distributions")
         fig_features = plot_numeric_distributions(df, target_col)
         if fig_features:
-            st.plotly_chart(fig_features, width='stretch')
+            st.plotly_chart(fig_features, use_container_width=True)
 
 else:
     st.warning("No data loaded.")

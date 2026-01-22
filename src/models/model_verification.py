@@ -1,5 +1,9 @@
 """
-Model verification: ablation, sensitivity, comparison.
+Model verification and validation layer.
+
+Handles cross-validation, ablation studies, sensitivity analysis,
+and performance stability checks.
+No Streamlit imports.
 """
 
 import pandas as pd
@@ -7,12 +11,13 @@ import numpy as np
 import plotly.graph_objects as go
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
-from preprocessing import impute_data, encode_data, scale_data
-from data import get_column_types
+
+from src.preprocessing.preprocessing import impute_data, encode_data, scale_data
+from src.data.data import get_column_types
 
 
 def _preprocess(df, target_col, params):
-    """Preprocess and return X, y."""
+    """Preprocess data and return X, y."""
     X = df.drop(columns=[target_col])
     y = df[target_col]
     
@@ -31,11 +36,13 @@ def _preprocess(df, target_col, params):
 
 
 def _get_model(model_type):
-    from model_logic import get_model
+    """Get model instance by type."""
+    from src.models.model_logic import get_model
     return get_model(model_type)
 
 
 def _model_type_from_instance(model):
+    """Infer model type from instance."""
     name = type(model).__name__
     if 'Logistic' in name:
         return 'Logistic Regression'
@@ -47,12 +54,28 @@ def _model_type_from_instance(model):
 
 
 def run_feature_ablation(df, target_col, model, preprocessing_params, feature_names=None, max_features=8):
-    """Measure accuracy drop when each feature is removed."""
+    """
+    Measure accuracy drop when each feature is removed.
+    
+    Args:
+        df: DataFrame with features and target
+        target_col: Target column name
+        model: Trained model instance
+        preprocessing_params: Preprocessing configuration
+        feature_names: List of feature names (optional)
+        max_features: Maximum features to test
+        
+    Returns:
+        dict: Baseline accuracy and ablation results
+    """
     X_p, y_p = _preprocess(df, target_col, preprocessing_params)
-    X_train, X_test, y_train, y_test = train_test_split(X_p, y_p, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X_p, y_p, test_size=0.2, random_state=42
+    )
     
     model_type = _model_type_from_instance(model)
     
+    # Train baseline
     baseline_model = _get_model(model_type)
     baseline_model.fit(X_train, y_train)
     baseline_acc = accuracy_score(y_test, baseline_model.predict(X_test))
@@ -77,13 +100,24 @@ def run_feature_ablation(df, target_col, model, preprocessing_params, feature_na
 
 
 def plot_ablation_chart(ablation_data):
-    """Bar chart of accuracy drop per feature."""
+    """
+    Create bar chart of accuracy drop per feature.
+    
+    Args:
+        ablation_data: Output from run_feature_ablation
+        
+    Returns:
+        plotly Figure
+    """
     results = ablation_data['ablation']
     baseline = ablation_data['baseline_accuracy']
     
     features = [r['feature'] for r in results]
     drops = [r['drop'] * 100 for r in results]
-    colors = ['#27ae60' if d > 0.5 else '#e74c3c' if d < -0.5 else '#95a5a6' for d in drops]
+    colors = [
+        '#27ae60' if d > 0.5 else '#e74c3c' if d < -0.5 else '#95a5a6' 
+        for d in drops
+    ]
     
     fig = go.Figure(go.Bar(
         x=drops, y=features, orientation='h',
@@ -103,7 +137,20 @@ def plot_ablation_chart(ablation_data):
 
 
 def run_sensitivity_analysis(df, target_col, model, preprocessing_params, feature_to_vary, n_points=20):
-    """Vary one feature, keep others at median, observe prediction changes."""
+    """
+    Analyze how predictions change when varying one feature.
+    
+    Args:
+        df: DataFrame with features and target
+        target_col: Target column name
+        model: Trained model instance
+        preprocessing_params: Preprocessing configuration
+        feature_to_vary: Feature to vary
+        n_points: Number of points to test
+        
+    Returns:
+        dict: Sensitivity analysis results or None
+    """
     X_p, _ = _preprocess(df, target_col, preprocessing_params)
     
     feat = feature_to_vary if feature_to_vary in X_p.columns else None
@@ -139,11 +186,25 @@ def run_sensitivity_analysis(df, target_col, model, preprocessing_params, featur
     else:
         response_type = 'smooth'
     
-    return {'feature': feat, 'values': values, 'predictions': preds, 'response_type': response_type}
+    return {
+        'feature': feat, 
+        'values': values, 
+        'predictions': preds, 
+        'response_type': response_type
+    }
 
 
 def plot_sensitivity_chart(sensitivity_data, target_col):
-    """Plot prediction vs feature value."""
+    """
+    Plot prediction vs feature value.
+    
+    Args:
+        sensitivity_data: Output from run_sensitivity_analysis
+        target_col: Target column name
+        
+    Returns:
+        plotly Figure or None
+    """
     if not sensitivity_data:
         return None
     
@@ -175,7 +236,19 @@ def plot_sensitivity_chart(sensitivity_data, target_col):
 
 
 def run_multi_model_response(df, target_col, preprocessing_params, feature_to_vary, n_points=25):
-    """Compare how different models respond to one feature."""
+    """
+    Compare how different models respond to one feature.
+    
+    Args:
+        df: DataFrame with features and target
+        target_col: Target column name
+        preprocessing_params: Preprocessing configuration
+        feature_to_vary: Feature to vary
+        n_points: Number of points to test
+        
+    Returns:
+        dict: Model response data or None
+    """
     X_p, y_p = _preprocess(df, target_col, preprocessing_params)
     
     feat = feature_to_vary if feature_to_vary in X_p.columns else None
@@ -220,7 +293,16 @@ def run_multi_model_response(df, target_col, preprocessing_params, feature_to_va
 
 
 def plot_multi_model_response(response_data, target_col):
-    """Line plot comparing model predictions vs feature."""
+    """
+    Create line plot comparing model predictions vs feature.
+    
+    Args:
+        response_data: Output from run_multi_model_response
+        target_col: Target column name
+        
+    Returns:
+        plotly Figure or None
+    """
     if not response_data or not response_data.get('model_predictions'):
         return None
     
@@ -228,7 +310,11 @@ def plot_multi_model_response(response_data, target_col):
     x = response_data['values']
     preds = response_data['model_predictions']
     
-    colors = {'Logistic Regression': '#3498db', 'KNN': '#e74c3c', 'Decision Tree': '#27ae60'}
+    colors = {
+        'Logistic Regression': '#3498db', 
+        'KNN': '#e74c3c', 
+        'Decision Tree': '#27ae60'
+    }
     
     fig = go.Figure()
     for name, y in preds.items():
@@ -251,7 +337,16 @@ def plot_multi_model_response(response_data, target_col):
 
 
 def get_verification_summary(ablation_data, sensitivity_data=None):
-    """Brief summary of important features."""
+    """
+    Generate brief summary of verification results.
+    
+    Args:
+        ablation_data: Output from run_feature_ablation
+        sensitivity_data: Output from run_sensitivity_analysis (optional)
+        
+    Returns:
+        str: Summary text
+    """
     results = ablation_data['ablation']
     top = [r for r in results if r['drop'] > 0.01][:3]
     

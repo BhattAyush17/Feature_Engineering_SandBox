@@ -1,11 +1,19 @@
+"""
+Constraint verification tests.
+
+Tests scaling impact, encoding, and target validation constraints.
+"""
+
 import pandas as pd
 import numpy as np
-from data import generate_messy_data
-from model_logic import train_and_evaluate
-import sys
 import traceback
 
+from src.data.data import generate_messy_data
+from src.models.model_logic import train_and_evaluate
+
+
 def verify_pipeline():
+    """Run constraint verification tests."""
     with open("verification_log.txt", "w") as f:
         def log(msg):
             print(msg, flush=True)
@@ -21,29 +29,43 @@ def verify_pipeline():
             models_affected = ['Logistic Regression', 'KNN']
             models_unaffected = ['Decision Tree']
             
-            params_no_scale = {'imputation': 'Mean', 'encoding': 'Label Encoding', 'scaling': 'No Scaling'}
-            params_scale = {'imputation': 'Mean', 'encoding': 'Label Encoding', 'scaling': 'StandardScaler'}
+            params_no_scale = {
+                'imputation': 'Mean', 
+                'encoding': 'Label Encoding', 
+                'scaling': 'No Scaling'
+            }
+            params_scale = {
+                'imputation': 'Mean', 
+                'encoding': 'Label Encoding', 
+                'scaling': 'StandardScaler'
+            }
             
             for m in models_affected:
                 log(f"Testing {m}...")
                 res1 = train_and_evaluate(df, target_col, m, params_no_scale)
                 res2 = train_and_evaluate(df, target_col, m, params_scale)
                 diff = abs(res1['Accuracy'] - res2['Accuracy'])
-                log(f"  {m}: Acc NoScale={res1['Accuracy']:.3f}, Acc Scale={res2['Accuracy']:.3f}, Diff={diff:.3f}")
+                log(f"  {m}: Acc NoScale={res1['Accuracy']:.3f}, "
+                    f"Acc Scale={res2['Accuracy']:.3f}, Diff={diff:.3f}")
                 
             for m in models_unaffected:
                 log(f"Testing {m}...")
                 res1 = train_and_evaluate(df, target_col, m, params_no_scale)
                 res2 = train_and_evaluate(df, target_col, m, params_scale)
                 diff = abs(res1['Accuracy'] - res2['Accuracy'])
-                log(f"  {m}: Acc NoScale={res1['Accuracy']:.3f}, Acc Scale={res2['Accuracy']:.3f}, Diff={diff:.3f}")
+                log(f"  {m}: Acc NoScale={res1['Accuracy']:.3f}, "
+                    f"Acc Scale={res2['Accuracy']:.3f}, Diff={diff:.3f}")
                 if diff > 1e-9:
-                     log(f"  WARNING: {m} should be invariant to scaling but changed!")
+                    log(f"  WARNING: {m} should be invariant to scaling but changed!")
                 else:
-                     log(f"  PASSED: {m} is invariant.")
+                    log(f"  PASSED: {m} is invariant.")
 
             log("\n=== Test 2: Encoding Dimensionality ===")
-            params_ohe = {'imputation': 'Mean', 'encoding': 'One-Hot Encoding', 'scaling': 'StandardScaler'}
+            params_ohe = {
+                'imputation': 'Mean', 
+                'encoding': 'One-Hot Encoding', 
+                'scaling': 'StandardScaler'
+            }
             log("Running Logistic Regression with One-Hot Encoding...")
             res_ohe = train_and_evaluate(df, target_col, 'Logistic Regression', params_ohe)
             log(f"One-Hot Encoding run successfully. Result: {res_ohe}")
@@ -52,11 +74,17 @@ def verify_pipeline():
             
             df_cont = df.copy()
             df_cont['ContinuousTarget'] = np.random.normal(0, 1, size=len(df))
-            params_basic = {'imputation': 'Mean', 'encoding': 'Label Encoding', 'scaling': 'No Scaling'}
+            params_basic = {
+                'imputation': 'Mean', 
+                'encoding': 'Label Encoding', 
+                'scaling': 'No Scaling'
+            }
             
             try:
                 log("Testing Continuous Target (Should Fail)...")
-                train_and_evaluate(df_cont, 'ContinuousTarget', 'Logistic Regression', params_basic)
+                train_and_evaluate(
+                    df_cont, 'ContinuousTarget', 'Logistic Regression', params_basic
+                )
                 log("FAILED: Continuous target was accepted! (Should have raised ValueError)")
             except ValueError as e:
                 if "continuous values" in str(e):
@@ -71,7 +99,9 @@ def verify_pipeline():
             
             try:
                 log("Testing Constant Target (Should Fail)...")
-                train_and_evaluate(df_const, 'ConstantTarget', 'Logistic Regression', params_basic)
+                train_and_evaluate(
+                    df_const, 'ConstantTarget', 'Logistic Regression', params_basic
+                )
                 log("FAILED: Constant target was accepted! (Should have raised ValueError)")
             except ValueError as e:
                 if "two unique classes" in str(e):
@@ -86,6 +116,7 @@ def verify_pipeline():
         except Exception:
             log("An error occurred:")
             log(traceback.format_exc())
+
 
 if __name__ == "__main__":
     verify_pipeline()

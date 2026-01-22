@@ -1,12 +1,44 @@
+"""
+Preprocessing layer.
+
+Handles missing value imputation, encoding, scaling, and type casting.
+Accepts raw DataFrames and returns transformed DataFrames.
+No model logic or Streamlit imports.
+"""
+
 from sklearn.impute import SimpleImputer
-from sklearn.preprocessing import LabelEncoder, StandardScaler, MinMaxScaler, RobustScaler, OneHotEncoder
+from sklearn.preprocessing import (
+    LabelEncoder, 
+    StandardScaler, 
+    MinMaxScaler, 
+    RobustScaler, 
+    OneHotEncoder
+)
 import pandas as pd
 import numpy as np
 
+
 def impute_data(df, strategy, numeric_cols, constant_value=0, imputer=None):
+    """
+    Impute missing values in numeric columns.
+    
+    Args:
+        df: DataFrame to impute
+        strategy: 'Drop Rows', 'Mean', 'Median', 'Most Frequent', or 'Constant'
+        numeric_cols: List of numeric columns to impute
+        constant_value: Value to use for 'Constant' strategy
+        imputer: Pre-fitted imputer (for test data)
+        
+    Returns:
+        tuple: (imputed_df, fitted_imputer)
+    """
     df_imputed = df.copy()
+    
     if strategy == 'Drop Rows':
         return df_imputed.dropna(subset=numeric_cols), None
+    
+    if not numeric_cols:
+        return df_imputed, None
     
     if imputer is None:
         if strategy == 'Constant':
@@ -27,8 +59,22 @@ def impute_data(df, strategy, numeric_cols, constant_value=0, imputer=None):
         
     return df_imputed, imputer
 
+
 def encode_data(df, strategy, categorical_cols, encoder=None):
+    """
+    Encode categorical columns.
+    
+    Args:
+        df: DataFrame to encode
+        strategy: 'Label Encoding', 'One-Hot Encoding', or 'Frequency Encoding'
+        categorical_cols: List of categorical columns to encode
+        encoder: Pre-fitted encoder (for test data)
+        
+    Returns:
+        tuple: (encoded_df, fitted_encoder)
+    """
     df_encoded = df.copy()
+    
     if not categorical_cols:
         return df_encoded, None
         
@@ -57,7 +103,11 @@ def encode_data(df, strategy, categorical_cols, encoder=None):
         encoded_cols = encoder.get_feature_names_out(categorical_cols)
         encoded_data = encoder.transform(df_encoded[categorical_cols])
         
-        df_encoded_ohe = pd.DataFrame(encoded_data, columns=encoded_cols, index=df_encoded.index)
+        df_encoded_ohe = pd.DataFrame(
+            encoded_data, 
+            columns=encoded_cols, 
+            index=df_encoded.index
+        )
         df_encoded = df_encoded.drop(columns=categorical_cols)
         df_encoded = pd.concat([df_encoded, df_encoded_ohe], axis=1)
         
@@ -72,8 +122,22 @@ def encode_data(df, strategy, categorical_cols, encoder=None):
             
     return df_encoded, encoder
 
+
 def scale_data(df, strategy, numeric_cols, scaler=None):
+    """
+    Scale numeric columns.
+    
+    Args:
+        df: DataFrame to scale
+        strategy: 'No Scaling', 'StandardScaler', 'MinMaxScaler', or 'RobustScaler'
+        numeric_cols: List of numeric columns to scale
+        scaler: Pre-fitted scaler (for test data)
+        
+    Returns:
+        tuple: (scaled_df, fitted_scaler)
+    """
     df_scaled = df.copy()
+    
     if not numeric_cols:
         return df_scaled, None
         
@@ -96,3 +160,59 @@ def scale_data(df, strategy, numeric_cols, scaler=None):
         df_scaled[numeric_cols] = scaler.transform(df_scaled[numeric_cols])
         
     return df_scaled, scaler
+
+
+def handle_outliers(df, numeric_cols, method='clip', threshold=3):
+    """
+    Handle outliers in numeric columns.
+    
+    Args:
+        df: DataFrame to process
+        numeric_cols: List of numeric columns
+        method: 'clip' (cap at threshold), 'remove' (drop rows), or 'none'
+        threshold: Number of standard deviations for outlier detection
+        
+    Returns:
+        DataFrame: Processed data
+    """
+    df_processed = df.copy()
+    
+    if method == 'none' or not numeric_cols:
+        return df_processed
+    
+    for col in numeric_cols:
+        mean = df_processed[col].mean()
+        std = df_processed[col].std()
+        lower = mean - threshold * std
+        upper = mean + threshold * std
+        
+        if method == 'clip':
+            df_processed[col] = df_processed[col].clip(lower=lower, upper=upper)
+        elif method == 'remove':
+            mask = (df_processed[col] >= lower) & (df_processed[col] <= upper)
+            df_processed = df_processed[mask]
+    
+    return df_processed
+
+
+def cast_types(df, type_mapping):
+    """
+    Cast columns to specified types.
+    
+    Args:
+        df: DataFrame to process
+        type_mapping: Dict of column_name -> dtype
+        
+    Returns:
+        DataFrame: Processed data
+    """
+    df_casted = df.copy()
+    
+    for col, dtype in type_mapping.items():
+        if col in df_casted.columns:
+            try:
+                df_casted[col] = df_casted[col].astype(dtype)
+            except (ValueError, TypeError):
+                pass
+    
+    return df_casted
