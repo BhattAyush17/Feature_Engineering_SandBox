@@ -65,16 +65,20 @@ The focus is not on building a single optimized model, but on enabling:
 <p><em>Add screenshots under <code>docs/screenshots/</code> to visually document the workflow.</em></p>
 
 <h3>Preprocessing & Feature Setup</h3>
-<img src="docs/screenshots/preprocessing.png" alt="Preprocessing Configuration" width="100%"/>
+<img src="<img width="1337" height="370" alt="image" src="https://github.com/user-attachments/assets/6fe4281b-7320-406f-b938-958882f0c0e5" />
+" alt="Preprocessing Configuration" width="100%"/>
 
 <h3>Feature Analysis</h3>
-<img src="docs/screenshots/feature_analysis.png" alt="Feature Analysis" width="100%"/>
+<img src="<img width="1266" height="874" alt="image" src="https://github.com/user-attachments/assets/c9981110-55cb-42b8-9d48-75fb7576fada" />
+" alt="Feature Analysis" width="100%"/>
 
 <h3>Model Evaluation</h3>
-<img src="docs/screenshots/model_evaluation.png" alt="Model Evaluation" width="100%"/>
+<img src="<img width="1307" height="573" alt="image" src="https://github.com/user-attachments/assets/dba977ff-82dd-435d-a03b-ae254ced7fef" />
+" alt="Model Evaluation" width="100%"/>
 
 <h3>Feature Ablation & Sensitivity</h3>
-<img src="docs/screenshots/ablation.png" alt="Feature Ablation" width="100%"/>
+<img src="<img width="1187" height="776" alt="image" src="https://github.com/user-attachments/assets/1da5dc23-4cf2-4f8c-9b29-b00ba253f3bd" />
+" alt="Feature Ablation" width="100%"/>
 
 <hr/>
 
