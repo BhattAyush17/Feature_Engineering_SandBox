@@ -2,7 +2,7 @@
 
 <p align="center">
   A hands-on Streamlit application for <strong>quick evaluation, implementation, and analysis</strong>
-  of feature engineering and preprocessing strategies for improving machine learning model performance.
+  of feature engineering and preprocessing strategies to improve machine learning model performance.
 </p>
 
 <p align="center">
@@ -17,7 +17,7 @@
 <h2>Purpose</h2>
 
 <p>
-Feature Engineering SandBox is designed as a <strong>practical experimentation workspace</strong> where
+Feature_Engineering_SandBox is designed as a <strong>practical experimentation workspace</strong> where
 data preprocessing, feature extraction, and evaluation decisions can be tested quickly and
 observed directly through model behavior and metrics.
 </p>
@@ -41,7 +41,7 @@ The focus is not on building a single optimized model, but on enabling:
   <li>Evaluating preprocessing strategies before full model training</li>
   <li>Understanding feature relevance and redundancy</li>
   <li>Testing feature extraction ideas in a controlled environment</li>
-  <li>Identifying stable vs sensitive features</li>
+  <li>Identifying stable versus sensitive features</li>
   <li>Making data-driven decisions for better downstream models</li>
 </ul>
 
@@ -62,23 +62,27 @@ The focus is not on building a single optimized model, but on enabling:
 
 <h2>Screenshots</h2>
 
-<p><em>Add screenshots under <code>docs/screenshots/</code> to visually document the workflow.</em></p>
+<p><em>Screenshots illustrating the workflow and evaluation views.</em></p>
 
 <h3>Preprocessing & Feature Setup</h3>
-<img src="<img width="1337" height="370" alt="image" src="https://github.com/user-attachments/assets/6fe4281b-7320-406f-b938-958882f0c0e5" />
-" alt="Preprocessing Configuration" width="100%"/>
+<img src="https://github.com/user-attachments/assets/6fe4281b-7320-406f-b938-958882f0c0e5"
+     alt="Preprocessing Configuration"
+     width="100%"/>
 
 <h3>Feature Analysis</h3>
-<img src="<img width="1266" height="874" alt="image" src="https://github.com/user-attachments/assets/c9981110-55cb-42b8-9d48-75fb7576fada" />
-" alt="Feature Analysis" width="100%"/>
+<img src="https://github.com/user-attachments/assets/c9981110-55cb-42b8-9d48-75fb7576fada"
+     alt="Feature Analysis"
+     width="100%"/>
 
 <h3>Model Evaluation</h3>
-<img src="<img width="1307" height="573" alt="image" src="https://github.com/user-attachments/assets/dba977ff-82dd-435d-a03b-ae254ced7fef" />
-" alt="Model Evaluation" width="100%"/>
+<img src="https://github.com/user-attachments/assets/dba977ff-82dd-435d-a03b-ae254ced7fef"
+     alt="Model Evaluation"
+     width="100%"/>
 
 <h3>Feature Ablation & Sensitivity</h3>
-<img src="<img width="1187" height="776" alt="image" src="https://github.com/user-attachments/assets/1da5dc23-4cf2-4f8c-9b29-b00ba253f3bd" />
-" alt="Feature Ablation" width="100%"/>
+<img src="https://github.com/user-attachments/assets/1da5dc23-4cf2-4f8c-9b29-b00ba253f3bd"
+     alt="Feature Ablation"
+     width="100%"/>
 
 <hr/>
 
@@ -122,7 +126,7 @@ Feature_Engineering_SandBox/
 <h2>Running Locally</h2>
 
 <pre>
-git clone https://github.com/&lt;BhattAyush17&gt;/Feature_Engineering_SandBox.git
+git clone https://github.com/BhattAyush17/Feature_Engineering_SandBox.git
 cd Feature_Engineering_SandBox
 pip install -r requirements.txt
 streamlit run app.py
@@ -145,15 +149,18 @@ streamlit run app.py
 <h2>Future Extensions</h2>
 
 <ul>
-  <li>Extending model support beyond Random Forest, Decision Tree, and other ml algorithms.</li>
+  <li>Extending support beyond Random Forest, Decision Tree, and Logistic Regression</li>
   <li>Enhanced feature importance comparison across supported models</li>
-  <li>Exportable evaluation summaries for feature and preprocessing decisions</li>
-  <li>Configurable feature extraction pipelines for tabular datasets</li>
+  <li>Exportable summaries for feature and preprocessing evaluations</li>
+  <li>More configurable feature extraction pipelines for tabular datasets</li>
 </ul>
-
 
 <hr/>
 
 <p align="center">
-  <em>Feature_Engineering_SandBox is a practical workspace that helps developers gain clear insights into feature behavior, evaluate preprocessing and extraction strategies, and make precise, data-driven decisions to improve feature-driven model performance.</em>
+  <em>
+    Feature_Engineering_SandBox helps developers gain clear insights into feature behavior,
+    evaluate preprocessing and extraction strategies, and make precise, data-driven decisions
+    to improve feature-driven model performance.
+  </em>
 </p>
