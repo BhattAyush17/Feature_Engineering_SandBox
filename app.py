@@ -1,8 +1,7 @@
 """
 ML Feature Engineering Sandbox - Entry Point (UI Layer)
 
-This is the Streamlit application entry point.
-Acts as a controller between UI and core logic.
+My plan for designing:
 
 MUST stay here:
 - Streamlit UI layout (st.title, st.sidebar, st.tabs, st.expander)
@@ -20,13 +19,13 @@ MUST NOT be here:
 
 import os
 
-# Prevent loky CPU detection crash
+
 os.environ.setdefault('LOKY_MAX_CPU_COUNT', '1')
 
 import streamlit as st
 import pandas as pd
 
-# Absolute imports from src package
+
 from src.data.data import (
     load_data, 
     generate_messy_data, 
@@ -77,7 +76,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Inject CSS
+
 st.markdown("""
 <style>
 .stApp {
@@ -325,7 +324,7 @@ if df_full is not None:
     model_name = st.selectbox("Choose Model", 
                              ["Logistic Regression", "KNN", "SVM", "Decision Tree"])
     
-    # Model-specific guidance (one sentence)
+    # Model-specific 
     st.info(f"{model_name}: {get_model_guidance(model_name)}")
     
     can_train, warning_msg = check_training_compatibility(target_info, model_name)
